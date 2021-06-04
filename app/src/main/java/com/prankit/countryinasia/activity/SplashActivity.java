@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 
-import com.prankit.countryinasia.MainActivity;
 import com.prankit.countryinasia.R;
 
 public class SplashActivity extends AppCompatActivity {
