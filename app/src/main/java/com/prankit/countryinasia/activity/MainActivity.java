@@ -4,16 +4,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.room.Room;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.prankit.countryinasia.Api;
 import com.prankit.countryinasia.R;
+import com.prankit.countryinasia.RoomDB;
 import com.prankit.countryinasia.adapter.CountryAdapter;
 import com.prankit.countryinasia.model.CountryModel;
+import com.prankit.countryinasia.model.RoomModel;
 
 import java.util.List;
 
@@ -30,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView.LayoutManager layoutManager;
     private RecyclerView.Adapter adapter;
     private Retrofit retrofit;
+    private RoomDB db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +50,15 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
         layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
-        getCountry();
+        db = Room.databaseBuilder(getApplicationContext(), RoomDB.class, "countryDb").allowMainThreadQueries().build();
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (isNetworkConnected()) getCountryOnline();
+        else getCountryOffline();
     }
 
     private boolean isNetworkConnected() {
@@ -52,13 +66,13 @@ public class MainActivity extends AppCompatActivity {
         return cm.getActiveNetworkInfo() != null && cm.getActiveNetworkInfo().isConnected();
     }
 
-    private void getCountry(){
+    private void getCountryOnline(){
         ((Api) new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(Api.class))
                 .asia().enqueue(new Callback<List<CountryModel>>() {
             @Override
             public void onResponse(Call<List<CountryModel>> call, Response<List<CountryModel>> response) {
                 if (response.isSuccessful()){
-                    adapter = new CountryAdapter(MainActivity.this, response.body());
+                    adapter = new CountryAdapter(MainActivity.this, response.body(), null, 1);
                     recyclerView.setAdapter(adapter);
                     recyclerView.setLayoutManager(layoutManager);
                 } else {
@@ -71,5 +85,30 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("getDatFail", t.getMessage() + "");
             }
         });
+    }
+
+    private void getCountryOffline(){
+        GetCountryAsyncTask asyncTask = new GetCountryAsyncTask();
+        List<RoomModel> list = asyncTask.doInBackground();
+        if (list.size() == 0){
+            adapter = new CountryAdapter(MainActivity.this, null, list, 2);
+            recyclerView.setAdapter(adapter);
+            recyclerView.setLayoutManager(layoutManager);
+            Toast.makeText(this, "No offline member found", Toast.LENGTH_SHORT).show();
+        }
+        else{
+            for (int pos = 0; pos < list.size(); pos++) {
+                adapter = new CountryAdapter(MainActivity.this, null, list, 2);
+                recyclerView.setAdapter(adapter);
+                recyclerView.setLayoutManager(layoutManager);
+            }
+        }
+    }
+
+    private class GetCountryAsyncTask extends AsyncTask<Void, Void, List<RoomModel>> {
+        @Override
+        protected List<RoomModel> doInBackground(Void... voids) {
+            return db.roomDAO().getAllCountry();
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.prankit.countryinasia.adapter;
 
 import android.content.Context;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +11,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.prankit.countryinasia.R;
 import com.prankit.countryinasia.Utils;
 import com.prankit.countryinasia.model.CountryModel;
+import com.prankit.countryinasia.model.RoomModel;
 
 import java.util.List;
 
@@ -22,10 +25,14 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.ViewHold
 
     private Context context;
     private List<CountryModel> countryList;
+    private List<RoomModel> roomList;
+    private int i;
 
-    public CountryAdapter(Context context, List<CountryModel> countryList) {
+    public CountryAdapter(Context context, List<CountryModel> countryList, List<RoomModel> roomList, int i) {
         this.context = context;
         this.countryList = countryList;
+        this.roomList = roomList;
+        this.i = i;
     }
 
     @NonNull
@@ -35,24 +42,36 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.ViewHold
         return new ViewHolder(view);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        CountryModel countryModel = countryList.get(position);
-
-        Log.i("getFlag", countryModel.getFlag());
-        holder.name.setText(countryModel.getName());
-        holder.capital.setText(countryModel.getCapital());
-        holder.region.setText(countryModel.getRegion());
-        holder.subRegion.setText(countryModel.getSubregion());
-        holder.population.setText(countryModel.getPopulation().toString());
-        holder.border.setText(countryModel.getBorders().toString());
-        holder.language.setText(countryModel.getLanguages().get(0).getLanguage_name());
-        Utils.fetchSvg(context, countryModel.getFlag(), holder.flag);
+        if (i==1) {
+            CountryModel countryModel = countryList.get(position);
+            holder.name.setText(countryModel.getName());
+            holder.capital.setText(countryModel.getCapital());
+            holder.region.setText(countryModel.getRegion());
+            holder.subRegion.setText(countryModel.getSubregion());
+            holder.population.setText(countryModel.getPopulation().toString());
+            holder.border.setText(countryModel.getBorders().toString());
+            holder.language.setText(countryModel.getLanguages().get(0).getLanguage_name());
+            Utils.fetchSvg(context, countryModel.getFlag(), holder.flag);
+        } else if (i==2){
+            RoomModel roomModel = roomList.get(position);
+            holder.name.setText(roomModel.getName());
+            holder.capital.setText(roomModel.getCapital());
+            holder.region.setText(roomModel.getRegion());
+            holder.subRegion.setText(roomModel.getSubregion());
+            holder.population.setText(Math.toIntExact(roomModel.getPopulation()));
+            holder.border.setText(roomModel.getBorders().toString());
+            holder.language.setText(roomModel.getLanguage());
+            Utils.fetchSvg(context, roomModel.getFlag(), holder.flag);
+        }
     }
 
     @Override
     public int getItemCount() {
-        return countryList.size();
+        if (i==1) return countryList.size();
+        else return roomList.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
