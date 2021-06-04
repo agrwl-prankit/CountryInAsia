@@ -34,8 +34,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private RecyclerView.LayoutManager layoutManager;
     private RecyclerView.Adapter adapter;
-    private Retrofit retrofit;
     private RoomDB db;
+    private Retrofit retrofit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,12 +51,14 @@ public class MainActivity extends AppCompatActivity {
         layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
 
         db = Room.databaseBuilder(getApplicationContext(), RoomDB.class, "countryDb").allowMainThreadQueries().build();
-
+        retrofit = new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build();
+        convertOnlineToOffline();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
+        Log.i("datadata", String.valueOf(isNetworkConnected()));
         if (isNetworkConnected()) getCountryOnline();
         else getCountryOffline();
     }
@@ -67,8 +69,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getCountryOnline(){
-        ((Api) new Retrofit.Builder().baseUrl(BASE_URL).addConverterFactory(GsonConverterFactory.create()).build().create(Api.class))
-                .asia().enqueue(new Callback<List<CountryModel>>() {
+        ((Api) retrofit.create(Api.class)).asia().enqueue(new Callback<List<CountryModel>>() {
             @Override
             public void onResponse(Call<List<CountryModel>> call, Response<List<CountryModel>> response) {
                 if (response.isSuccessful()){
@@ -88,8 +89,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getCountryOffline(){
+        Log.i("datadata", "offline");
         GetCountryAsyncTask asyncTask = new GetCountryAsyncTask();
         List<RoomModel> list = asyncTask.doInBackground();
+        Log.i("datadata", "offline "+list.size());
         if (list.size() == 0){
             adapter = new CountryAdapter(MainActivity.this, null, list, 2);
             recyclerView.setAdapter(adapter);
@@ -109,6 +112,35 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected List<RoomModel> doInBackground(Void... voids) {
             return db.roomDAO().getAllCountry();
+        }
+    }
+
+    private void convertOnlineToOffline(){
+        GetCountryAsyncTask countryAsyncTask = new GetCountryAsyncTask();
+        List<RoomModel> list = countryAsyncTask.doInBackground();
+        if (list.size() == 0 && isNetworkConnected()){
+            ((Api) retrofit.create(Api.class)).asia().enqueue(new Callback<List<CountryModel>>() {
+                @Override
+                public void onResponse(Call<List<CountryModel>> call, Response<List<CountryModel>> response) {
+                    if (response.isSuccessful()) {
+                        List<CountryModel> list1 = response.body();
+                        for (int pos = 0; pos < list1.size(); pos++) {
+                            RoomModel country = new RoomModel(list1.get(pos).getName(), list1.get(pos).getCapital(), list1.get(pos).getFlag(),
+                                    list1.get(pos).getRegion(), list1.get(pos).getSubregion(), list1.get(pos).getPopulation(),
+                                    list1.get(pos).getLanguages().get(0).getLanguage_name());
+                            db.roomDAO().addCountry(country);
+                        }
+                        getCountryOnline();
+                    } else {
+                        Log.i("offlineError", response.errorBody().toString());
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<CountryModel>> call, Throwable t) {
+                    Log.i("offlineFail", t.getMessage());
+                }
+            });
         }
     }
 }

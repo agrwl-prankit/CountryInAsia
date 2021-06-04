@@ -4,6 +4,8 @@ import androidx.room.ColumnInfo;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
+import java.util.ArrayList;
+
 @Entity(tableName = "Country")
 public class RoomModel {
 
@@ -23,10 +25,8 @@ public class RoomModel {
     private long population;
     @ColumnInfo(name = "language")
     private String language;
-    @ColumnInfo(name = "borders")
-    private Object borders;
 
-    public RoomModel(String name, String capital, String flag, String region, String subregion, long population, String language, Object borders) {
+    public RoomModel(String name, String capital, String flag, String region, String subregion, long population, String language) {
         this.name = name;
         this.capital = capital;
         this.flag = flag;
@@ -34,7 +34,6 @@ public class RoomModel {
         this.subregion = subregion;
         this.population = population;
         this.language = language;
-        this.borders = borders;
     }
 
     public long getId() {
@@ -99,13 +98,5 @@ public class RoomModel {
 
     public void setLanguage(String language) {
         this.language = language;
-    }
-
-    public Object getBorders() {
-        return borders;
-    }
-
-    public void setBorders(Object borders) {
-        this.borders = borders;
     }
 }

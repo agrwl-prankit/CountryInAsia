@@ -61,8 +61,8 @@ public class CountryAdapter extends RecyclerView.Adapter<CountryAdapter.ViewHold
             holder.capital.setText(roomModel.getCapital());
             holder.region.setText(roomModel.getRegion());
             holder.subRegion.setText(roomModel.getSubregion());
-            holder.population.setText(Math.toIntExact(roomModel.getPopulation()));
-            holder.border.setText(roomModel.getBorders().toString());
+            holder.population.setText(String.valueOf(roomModel.getPopulation()));
+            holder.border.setText("No border in db");
             holder.language.setText(roomModel.getLanguage());
             Utils.fetchSvg(context, roomModel.getFlag(), holder.flag);
         }
